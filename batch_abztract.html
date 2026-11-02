@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Abztract Family Explorer</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for clean iconography -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#faf5ff',
+              500: '#a855f7',
+              600: '#9333ea',
+              700: '#7e22ce',
+              900: '#3b0764'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbars & smooth iframe rendering */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Iframe viewport scaling container */
+    .preview-viewport {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      background: #090d16;
+    }
+
+    /* Target desktop preview resolution scaled down smoothly */
+    .scaled-iframe {
+      width: 1280px;
+      height: 960px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: center center;
+      border: 0;
+      pointer-events: none; /* Clicking delegates to parent overlay */
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-purple-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+          <i class="fa-solid fa-shapes text-white text-lg"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+            Abztract Family Matrix
+            <span class="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 font-medium">45 Families</span>
+          </h1>
+          <p class="text-xs text-slate-400">Batch generative visualizer for <a href="https://abztract.arhamkhnz.com/" target="_blank" rel="noreferrer" class="text-purple-400 hover:underline">abztract.arhamkhnz.com</a></p>
+        </div>
+      </div>
+
+      <!-- Quick action buttons -->
+      <div class="flex items-center gap-2">
+        <button id="openAllSampleBtn" title="Launch original preset site in new tab" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Current URL
+        </button>
+        <button id="resetPresetBtn" title="Reset back to default example URL" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700 flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate-left"></i> Reset
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Controls Section -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-4 w-full">
+    <div class="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-sm">
+      <form id="urlForm" class="space-y-4">
+        <div>
+          <label for="urlInput" class="block text-xs font-medium uppercase tracking-wider text-slate-400 mb-1.5">
+            Target Abztract Base URL (with your custom seed, colors, strokes, warp, etc.)
+          </label>
+          <div class="relative flex flex-col sm:flex-row gap-2">
+            <div class="relative flex-grow">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-500">
+                <i class="fa-solid fa-link text-sm"></i>
+              </span>
+              <input 
+                type="text" 
+                id="urlInput" 
+                class="w-full pl-10 pr-24 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 font-mono transition-all"
+                placeholder="https://abztract.arhamkhnz.com/?seed=..."
+              />
+              <button 
+                type="button" 
+                id="pasteBtn"
+                class="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md border border-slate-700 transition-colors"
+                title="Paste from clipboard"
+              >
+                <i class="fa-regular fa-clipboard mr-1"></i> Paste
+              </button>
+            </div>
+            <button 
+              type="submit" 
+              class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-medium text-sm rounded-xl shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center gap-2 flex-shrink-0"
+            >
+              <i class="fa-solid fa-wand-magic-sparkles"></i>
+              <span>Generate Matrix</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & View Controls bar -->
+        <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
+          <!-- Family search/filter -->
+          <div class="flex items-center gap-2 flex-grow sm:flex-grow-0 sm:w-64">
+            <div class="relative w-full">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"></i>
+              <input 
+                type="text" 
+                id="filterInput" 
+                placeholder="Search name, id, or tag..." 
+                class="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-700/80 rounded-lg text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          <!-- Category filter buttons -->
+          <div id="categoryFilters" class="flex items-center flex-wrap gap-1.5">
+            <button type="button" data-cat="all" class="cat-pill px-2.5 py-1 rounded-md text-xs font-medium bg-purple-600 text-white transition-colors">All</button>
+            <button type="button" data-cat="curves" class="cat-pill px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors">Curves</button>
+            <button type="button" data-cat="woven" class="cat-pill px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors">Woven</button>
+            <button type="button" data-cat="radial" class="cat-pill px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors">Radial</button>
+            <button type="button" data-cat="geometry" class="cat-pill px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors">Geometry</button>
+            <button type="button" data-cat="texture" class="cat-pill px-2.5 py-1 rounded-md text-xs font-medium bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors">Texture</button>
+          </div>
+
+          <!-- Parameter & Tuning Badges -->
+          <div class="flex items-center flex-wrap gap-2 text-slate-400 ml-auto">
+            <div id="activeParamsSummary" class="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-slate-300">
+              Loading parameters...
+            </div>
+
+            <!-- Grid scale selector -->
+            <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1">
+              <label for="gridSizeSelect" class="text-slate-500 text-[11px]">Size:</label>
+              <select id="gridSizeSelect" class="bg-transparent text-slate-300 text-xs focus:outline-none cursor-pointer">
+                <option value="small" class="bg-slate-900">Small</option>
+                <option value="medium" selected class="bg-slate-900">Standard</option>
+                <option value="large" class="bg-slate-900">Large</option>
+              </select>
+            </div>
+
+            <!-- Lazy Loading toggle -->
+            <button 
+              type="button" 
+              id="reloadAllBtn" 
+              title="Refresh all frames"
+              class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 transition-colors flex items-center gap-1.5"
+            >
+              <i class="fa-solid fa-arrows-rotate"></i> Reload All
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- Gallery Main -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex-grow w-full">
+    <!-- Status / Counter -->
+    <div class="flex items-center justify-between mb-4 px-1">
+      <div class="text-xs text-slate-400">
+        Showing <span id="familyCount" class="font-semibold text-white">45</span> families. 
+        <span class="text-slate-500">Click any card to open the editable canvas in Abztract.</span>
+      </div>
+      <div id="loadingIndicator" class="hidden text-xs text-purple-400 flex items-center gap-2">
+        <i class="fa-solid fa-circle-notch fa-spin"></i> Rendering variants...
+      </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div 
+      id="cardsGrid" 
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 transition-all"
+    >
+      <!-- Cards dynamically injected -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="noResults" class="hidden py-16 text-center">
+      <div class="w-14 h-14 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500 text-xl">
+        <i class="fa-solid fa-ghost"></i>
+      </div>
+      <h3 class="text-slate-200 font-semibold text-base mb-1">No matching families</h3>
+      <p class="text-slate-400 text-xs">Try adjusting your filter search term.</p>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950/80 mt-12 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p>
+        Generator utility for <a href="https://abztract.arhamkhnz.com/" target="_blank" rel="noreferrer" class="text-purple-400 hover:underline">Abztract by @arhamkhnz</a>
+      </p>
+      <div class="flex items-center gap-4 text-slate-400">
+        <span class="flex items-center gap-1.5"><i class="fa-solid fa-bolt text-yellow-500"></i> Pure Client-side</span>
+        <span>•</span>
+        <span class="flex items-center gap-1.5"><i class="fa-brands fa-github"></i> Ready for GitHub Pages</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 border border-purple-500/40 text-slate-200 px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 text-xs">
+    <i class="fa-solid fa-circle-check text-purple-400 text-sm"></i>
+    <span id="toastMessage">Copied to clipboard!</span>
+  </div>
+
+  <script>
+    // Complete 45 family definitions with exact IDs used in the URL parameters
+    const FAMILIES = [
+      {
+        id: "lissajous",
+        name: "Lissajous",
+        category: "curves",
+        description: "Crossing sine waves",
+        labels: ["Horizontal frequency", "Vertical frequency"],
+        frequency: 3,
+        detail: 4,
+        phase: 90,
+        warp: 0,
+        style: "outline",
+        stroke: 2.5,
+      },
+      {
+        id: "spiro",
+        name: "Spirograph",
+        category: "curves",
+        description: "Rolling-circle loops",
+        labels: ["Outer rhythm", "Inner rhythm"],
+        frequency: 7,
+        detail: 3,
+        phase: 20,
+        warp: 0.65,
+        style: "outline",
+        stroke: 2.5,
+      },
+      {
+        id: "spiral",
+        name: "Spiral",
+        category: "curves",
+        description: "Open expanding spiral arms",
+        labels: ["Turns", "Arms"],
+        frequency: 8,
+        detail: 3,
+        phase: 0,
+        warp: 0.35,
+        style: "outline",
+        stroke: 1,
+      },
+      {
+        id: "swirl",
+        name: "Swirl",
+        category: "curves",
+        description: "Growing loops with drifting centres",
+        labels: ["Turns", "Arms"],
+        frequency: 9,
+        detail: 4,
+        phase: 0,
+        warp: 0.55,
+        style: "outline",
+        stroke: 1,
+      },
+      {
+        id: "harmonograph",
+        name: "Harmonograph",
+        category: "curves",
+        description: "Damped pendulum traces",
+        labels: ["Horizontal rhythm", "Vertical rhythm"],
+        frequency: 3,
+        detail: 4,
+        phase: 0,
+        warp: 0.3,
+        style: "outline",
+        stroke: 1,
+      },
+      {
+        id: "rose",
+        name: "Rosette",
+        category: "curves",
+        description: "Flowing petal curves",
+        labels: ["Petals", "Ripple frequency"],
+        frequency: 6,
+        detail: 2,
+        phase: 0,
+        warp: 0.32,
+        style: "outline",
+        stroke: 3,
+      },
+      {
+        id: "orbit",
+        name: "Orbit",
+        category: "curves",
+        description: "Elliptical globe lines",
+        labels: ["Meridians", "Parallels"],
+        frequency: 4,
+        detail: 3,
+        phase: 90,
+        warp: 0,
+        style: "outline",
+        stroke: 2.5,
+      },
+      {
+        id: "wave",
+        name: "Soft star",
+        category: "curves",
+        description: "Soft repeating waves",
+        labels: ["Lobes", "Ripple frequency"],
+        frequency: 6,
+        detail: 2,
+        phase: 0,
+        warp: 0.35,
+        style: "outline",
+        stroke: 5,
+      },
+      {
+        id: "super",
+        name: "Soft polygon",
+        category: "curves",
+        description: "Rounded geometric outlines",
+        labels: ["Sides", "Corner shape"],
+        frequency: 6,
+        detail: 3,
+        phase: 0,
+        warp: 0.45,
+        style: "outline",
+        stroke: 4,
+      },
+      {
+        id: "knot",
+        name: "Knot",
+        category: "woven",
+        description: "Crossed continuous loops",
+        labels: ["Loops", "Inner rhythm"],
+        frequency: 3,
+        detail: 2,
+        phase: 0,
+        warp: 0.42,
+        style: "woven",
+        stroke: 10,
+      },
+      {
+        id: "weave",
+        name: "Weave",
+        category: "woven",
+        description: "Interlaced rounded bands",
+        labels: ["Bands", "Corner shape"],
+        frequency: 2,
+        detail: 4,
+        phase: 45,
+        warp: 0.25,
+        style: "woven",
+        stroke: 7,
+      },
+      {
+        id: "petals",
+        name: "Loop wreath",
+        category: "woven",
+        description: "Overlapping loop wreaths",
+        labels: ["Loops", "Loop shape"],
+        frequency: 8,
+        detail: 4,
+        phase: 70,
+        warp: 0.6,
+        style: "double",
+        stroke: 2.5,
+      },
+      {
+        id: "pinwheel",
+        name: "Pinwheel",
+        category: "radial",
+        description: "Twisted radial blades",
+        labels: ["Blades", "Blade width"],
+        frequency: 12,
+        detail: 3,
+        phase: 24,
+        warp: 0.35,
+        style: "solid",
+        stroke: 2.5,
+      },
+      {
+        id: "shards",
+        name: "Diamonds",
+        category: "radial",
+        description: "Repeated diamond shapes",
+        labels: ["Diamonds", "Width"],
+        frequency: 6,
+        detail: 2,
+        phase: 20,
+        warp: 0.45,
+        style: "outline",
+        stroke: 4,
+      },
+      {
+        id: "star",
+        name: "Star",
+        category: "radial",
+        description: "Sharp alternating points",
+        labels: ["Points", "Inset depth"],
+        frequency: 8,
+        detail: 3,
+        phase: 0,
+        warp: 0.4,
+        style: "outline",
+        stroke: 4,
+      },
+      {
+        id: "sun",
+        name: "Sunburst",
+        category: "radial",
+        description: "Radial pointed rays",
+        labels: ["Rays", "Ray width"],
+        frequency: 16,
+        detail: 3,
+        phase: 0,
+        warp: 0.35,
+        style: "solid",
+        stroke: 3,
+      },
+      {
+        id: "rubber-band",
+        name: "Rubber band",
+        category: "geometry",
+        description: "Rounded grid loops; layouts 1–4 free, 5–8 mirrored, 9–12 mirrored on both axes",
+        labels: ["Grid rows", "Layout"],
+        frequency: 4,
+        detail: 6,
+        phase: 42,
+        warp: 0.65,
+        style: "solid",
+        stroke: 1,
+      },
+      {
+        id: "split-disc",
+        name: "Split disc",
+        category: "radial",
+        description: "Circular pieces separated by deliberate radial openings",
+        labels: ["Segments", "Inner contour"],
+        frequency: 6,
+        detail: 6,
+        phase: 0,
+        warp: 0.25,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "radial-bands",
+        name: "Radial bands",
+        category: "radial",
+        description: "Repeated arcs, angular ribbons, and arrow bands",
+        labels: ["Repeats", "Band and motif"],
+        frequency: 4,
+        detail: 3,
+        phase: 15,
+        warp: 0.3,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "soft-branches",
+        name: "Soft branches",
+        category: "radial",
+        description: "Smooth joined lobes with rounded ends",
+        labels: ["Arms", "Arm shape"],
+        frequency: 5,
+        detail: 5,
+        phase: 0,
+        warp: 0.35,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "bloom",
+        name: "Cutout bloom",
+        category: "radial",
+        description: "A soft outer mark with a true transparent centre",
+        labels: ["Lobes", "Cutout shape"],
+        frequency: 6,
+        detail: 6,
+        phase: 30,
+        warp: 0.45,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "offset-rings",
+        name: "Offset rings",
+        category: "geometry",
+        description: "Nested rings converging toward a shared focus",
+        labels: ["Rings", "Focus offset"],
+        frequency: 10,
+        detail: 11,
+        phase: 225,
+        warp: 0.45,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "dotted",
+        name: "Dotted",
+        category: "geometry",
+        description: "Dotted isometric edges, nested hexagons, and orbit clusters",
+        labels: ["Dot density", "Structure"],
+        frequency: 6,
+        detail: 1,
+        phase: 0,
+        warp: 0.3,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "crescents",
+        name: "Crescents",
+        category: "geometry",
+        description: "Alternating rows of clean intersecting-circle crescents",
+        labels: ["Columns", "Rows"],
+        frequency: 4,
+        detail: 3,
+        phase: 0,
+        warp: 0.5,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "curve-fan",
+        name: "Curve fan",
+        category: "geometry",
+        description: "Bezier curves converging across a square frame",
+        labels: ["Curves", "Bend and frame"],
+        frequency: 12,
+        detail: 3,
+        phase: 0,
+        warp: 0.5,
+        style: "outline",
+        stroke: 2.2,
+      },
+      {
+        id: "perforated",
+        name: "Perforated",
+        category: "geometry",
+        description: "Scalloped grids and discs with true transparent openings",
+        labels: ["Columns or slots", "Cutout layout"],
+        frequency: 3,
+        detail: 3,
+        phase: 0,
+        warp: 0.5,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "arc-motifs",
+        name: "Arc motifs",
+        category: "geometry",
+        description: "Inward-facing arc bands and framed concave symbols",
+        labels: ["Repeats", "Motif and bands"],
+        frequency: 3,
+        detail: 3,
+        phase: 0,
+        warp: 0.4,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "badge",
+        name: "Badge",
+        category: "geometry",
+        description: "A rounded polygon frame, circular opening, and curved central star",
+        labels: ["Frame sides", "Star points"],
+        frequency: 6,
+        detail: 4,
+        phase: 60,
+        warp: 0.55,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "layered",
+        name: "Layered",
+        category: "geometry",
+        description: "Paired curved sheets, open corners, planes, and arches",
+        labels: ["Construction", "Profile"],
+        frequency: 1,
+        detail: 7,
+        phase: 180,
+        warp: 0.35,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "modules",
+        name: "Modules",
+        category: "geometry",
+        description: "Grid tiles with squares, dots, curved pieces, and soft blocks",
+        labels: ["Tile count", "Tile and layout"],
+        frequency: 7,
+        detail: 7,
+        phase: 35,
+        warp: 0.35,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "joined",
+        name: "Joined",
+        category: "geometry",
+        description: "One continuous silhouette built from connected grid cells",
+        labels: ["Cell count", "Layout"],
+        frequency: 6,
+        detail: 4,
+        phase: 85,
+        warp: 0.65,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "spokes",
+        name: "Spokes",
+        category: "radial",
+        description: "Fine flat-ended rays with composed lengths and angles",
+        labels: ["Rays", "Ray composition"],
+        frequency: 7,
+        detail: 9,
+        phase: 0,
+        warp: 0.2,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "panels",
+        name: "Panels",
+        category: "geometry",
+        description: "Dashboard layouts with a sidebar and split content panels",
+        labels: ["Panel count", "Corner radius"],
+        frequency: 3,
+        detail: 6,
+        phase: 90,
+        warp: 0.5,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "offset",
+        name: "Offset",
+        category: "geometry",
+        description: "Shifted corner modules with bold negative space",
+        labels: ["Modules", "Module shape"],
+        frequency: 3,
+        detail: 6,
+        phase: 0,
+        warp: 0.35,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "cutout",
+        name: "Cutout",
+        category: "geometry",
+        description: "Bold polygons with recessed edges",
+        labels: ["Sides", "Cut style"],
+        frequency: 4,
+        detail: 6,
+        phase: 45,
+        warp: 0.5,
+        style: "solid",
+        stroke: 0.5,
+      },
+      {
+        id: "polygon",
+        name: "Polygon ring",
+        category: "geometry",
+        description: "A ring of polygons",
+        labels: ["Repeats", "Polygon sides"],
+        frequency: 8,
+        detail: 3,
+        phase: 10,
+        warp: 0.3,
+        style: "outline",
+        stroke: 3,
+      },
+      {
+        id: "cross",
+        name: "Cross",
+        category: "geometry",
+        description: "Connected radial arms",
+        labels: ["Arms", "Arm width"],
+        frequency: 4,
+        detail: 3,
+        phase: 0,
+        warp: 0.45,
+        style: "double",
+        stroke: 3,
+      },
+      {
+        id: "maze",
+        name: "Steps",
+        category: "geometry",
+        description: "Stepped angular outlines",
+        labels: ["Sides", "Step depth"],
+        frequency: 4,
+        detail: 3,
+        phase: 45,
+        warp: 0.3,
+        style: "outline",
+        stroke: 4,
+      },
+      {
+        id: "lattice",
+        name: "Lattice",
+        category: "geometry",
+        description: "Rotated triangular grids with an open centre",
+        labels: ["Rotated grids", "Grid density"],
+        frequency: 2,
+        detail: 6,
+        phase: 0,
+        warp: 0.4,
+        style: "outline",
+        stroke: 0.8,
+      },
+      {
+        id: "hex",
+        name: "Honeycomb",
+        category: "geometry",
+        description: "Hexagonal cell clusters",
+        labels: ["Surrounding cells", "Cell rings"],
+        frequency: 6,
+        detail: 1,
+        phase: 0,
+        warp: 0.22,
+        style: "outline",
+        stroke: 4,
+      },
+      {
+        id: "cubes",
+        name: "Cubes",
+        category: "geometry",
+        description: "Isometric cube outlines",
+        labels: ["Cubes", "Cube size"],
+        frequency: 3,
+        detail: 2,
+        phase: 0,
+        warp: 0.2,
+        style: "outline",
+        stroke: 3,
+      },
+      {
+        id: "rings",
+        name: "Rings",
+        category: "texture",
+        description: "Nested circles and arcs",
+        labels: ["Rings", "Arc segments"],
+        frequency: 6,
+        detail: 1,
+        phase: 0,
+        warp: 0.12,
+        style: "outline",
+        stroke: 4,
+      },
+      {
+        id: "stripes",
+        name: "Line disc",
+        category: "texture",
+        description: "Parallel lines in a disc",
+        labels: ["Lines", "Line repeats"],
+        frequency: 14,
+        detail: 1,
+        phase: 45,
+        warp: 0.05,
+        style: "outline",
+        stroke: 3,
+      },
+      {
+        id: "beads",
+        name: "Beads",
+        category: "texture",
+        description: "Circular bead patterns",
+        labels: ["Beads", "Rows"],
+        frequency: 9,
+        detail: 1,
+        phase: 0,
+        warp: 0.3,
+        style: "outline",
+        stroke: 3,
+      },
+      {
+        id: "chords",
+        name: "String art",
+        category: "texture",
+        description: "Modular circle connections",
+        labels: ["Point density", "Multiplier"],
+        frequency: 12,
+        detail: 3,
+        phase: 0,
+        warp: 0.2,
+        style: "outline",
+        stroke: 1.2,
+      },
+    ];
+
+    // Default sample URL provided
+    const DEFAULT_URL = "https://abztract.arhamkhnz.com/?seed=abztract&family=rose&style=solid&frequency=5&detail=3&phase=20&warp=0.65&centerSize=0.6&frameThickness=1&stroke=1&color=%23ffffff&background=%23000000&cap=round&layers=1&spacing=0.14&copies=1&rotation=15&aspect=1&overlay=none&overlayScale=0.62&overlayRotation=0&keepFamily=1&transparent=1&size=2048";
+
+    // DOM Elements
+    const urlInput = document.getElementById('urlInput');
+    const urlForm = document.getElementById('urlForm');
+    const pasteBtn = document.getElementById('pasteBtn');
+    const cardsGrid = document.getElementById('cardsGrid');
+    const filterInput = document.getElementById('filterInput');
+    const familyCount = document.getElementById('familyCount');
+    const noResults = document.getElementById('noResults');
+    const gridSizeSelect = document.getElementById('gridSizeSelect');
+    const reloadAllBtn = document.getElementById('reloadAllBtn');
+    const resetPresetBtn = document.getElementById('resetPresetBtn');
+    const openAllSampleBtn = document.getElementById('openAllSampleBtn');
+    const activeParamsSummary = document.getElementById('activeParamsSummary');
+    const categoryFilters = document.getElementById('categoryFilters');
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+
+    // State
+    let currentBaseUrl = DEFAULT_URL;
+    let currentFilter = '';
+    let currentCategory = 'all';
+
+    // Initialize
+    function init() {
+      const currentQuery = new URLSearchParams(window.location.search).get('src');
+      if (currentQuery) {
+        urlInput.value = decodeURIComponent(currentQuery);
+      } else {
+        urlInput.value = DEFAULT_URL;
+      }
+      currentBaseUrl = urlInput.value.trim();
+
+      renderGallery();
+      setupEventListeners();
+    }
+
+    // Build URL using the exact family id as the URL parameter
+    function buildFamilyUrl(baseInputUrl, familyId) {
+      try {
+        let trimmed = baseInputUrl.trim();
+        if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+          trimmed = 'https://' + trimmed;
+        }
+        const parsed = new URL(trimmed);
+        
+        if (!parsed.hostname.includes('abztract')) {
+          parsed.host = 'abztract.arhamkhnz.com';
+        }
+
+        // Sets ?family={id} (e.g. ?family=spiro or ?family=rubber-band)
+        parsed.searchParams.set('family', familyId);
+        
+        return parsed.toString();
+      } catch (err) {
+        return `https://abztract.arhamkhnz.com/?family=${encodeURIComponent(familyId)}`;
+      }
+    }
+
+    function getCategoryColor(cat) {
+      switch (cat) {
+        case 'curves': return 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+        case 'woven': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        case 'radial': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        case 'geometry': return 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+        case 'texture': return 'bg-pink-500/10 text-pink-400 border-pink-500/20';
+        default: return 'bg-slate-800 text-slate-400 border-slate-700';
+      }
+    }
+
+    // Compute iframe zoom scale based on grid card size
+    function getScaleFactor(size) {
+      switch (size) {
+        case 'small': return 0.22;
+        case 'large': return 0.40;
+        case 'medium':
+        default: return 0.28;
+      }
+    }
+
+    function updateGridClasses(size) {
+      cardsGrid.className = 'grid gap-4 transition-all';
+      if (size === 'small') {
+        cardsGrid.classList.add('grid-cols-2', 'sm:grid-cols-3', 'md:grid-cols-4', 'lg:grid-cols-6');
+      } else if (size === 'large') {
+        cardsGrid.classList.add('grid-cols-1', 'sm:grid-cols-2', 'lg:grid-cols-3');
+      } else {
+        cardsGrid.classList.add('grid-cols-1', 'sm:grid-cols-2', 'md:grid-cols-3', 'lg:grid-cols-4');
+      }
+    }
+
+    // Render cards
+    function renderGallery() {
+      const inputVal = urlInput.value.trim() || DEFAULT_URL;
+      currentBaseUrl = inputVal;
+
+      try {
+        const u = new URL(inputVal.startsWith('http') ? inputVal : 'https://' + inputVal);
+        const seed = u.searchParams.get('seed') || 'random';
+        const style = u.searchParams.get('style') || 'default';
+        const color = u.searchParams.get('color') || '#ffffff';
+        activeParamsSummary.innerHTML = `<span class="opacity-70">seed:</span> ${escapeHtml(seed)} · <span class="opacity-70">style:</span> ${escapeHtml(style)} · <span class="inline-block w-2.5 h-2.5 rounded-full border border-slate-600 align-middle ml-1" style="background:${color}"></span>`;
+      } catch (e) {
+        activeParamsSummary.textContent = "Custom Parameters";
+      }
+
+      // Filter list by search query and category
+      const filtered = FAMILIES.filter(f => {
+        const matchesCategory = currentCategory === 'all' || f.category === currentCategory;
+        if (!matchesCategory) return false;
+
+        if (!currentFilter) return true;
+        const q = currentFilter.toLowerCase();
+        return (
+          f.name.toLowerCase().includes(q) ||
+          f.id.toLowerCase().includes(q) ||
+          f.category.toLowerCase().includes(q) ||
+          (f.description && f.description.toLowerCase().includes(q))
+        );
+      });
+
+      familyCount.textContent = filtered.length;
+      noResults.classList.toggle('hidden', filtered.length > 0);
+      cardsGrid.innerHTML = '';
+
+      const scale = getScaleFactor(gridSizeSelect.value);
+
+      filtered.forEach((item) => {
+        // ID is used for the URL parameter
+        const targetUrl = buildFamilyUrl(inputVal, item.id);
+        const catBadge = getCategoryColor(item.category);
+        
+        const card = document.createElement('div');
+        card.className = "group relative bg-slate-900 border border-slate-800 hover:border-purple-500/60 rounded-xl overflow-hidden shadow-lg hover:shadow-purple-900/20 transition-all duration-300 flex flex-col";
+        
+        card.innerHTML = `
+          <!-- Card Header -->
+          <div class="px-3 py-2.5 bg-slate-900/90 border-b border-slate-800/80 flex items-center justify-between z-10">
+            <div class="flex items-center gap-1.5 overflow-hidden">
+              <span class="text-xs font-semibold text-slate-200 truncate group-hover:text-purple-300 transition-colors" title="${escapeHtml(item.name)}">
+                ${escapeHtml(item.name)}
+              </span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-purple-300 border border-slate-700/60 truncate" title="id: ${escapeHtml(item.id)}">
+                ${escapeHtml(item.id)}
+              </span>
+              <span class="text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border ${catBadge}">
+                ${escapeHtml(item.category)}
+              </span>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <button 
+                type="button"
+                class="copy-btn text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 text-xs transition-colors"
+                data-url="${encodeURI(targetUrl)}"
+                title="Copy URL: family=${escapeHtml(item.id)}"
+              >
+                <i class="fa-regular fa-copy"></i>
+              </button>
+              <a 
+                href="${encodeURI(targetUrl)}" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="text-slate-400 hover:text-purple-400 p-1 rounded hover:bg-slate-800 text-xs transition-colors"
+                title="Open family=${escapeHtml(item.id)} in Abztract"
+              >
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              </a>
+            </div>
+          </div>
+
+          <!-- Preview Area with click-through overlay -->
+          <div class="relative w-full aspect-square bg-[#030712] overflow-hidden group-hover:ring-1 group-hover:ring-purple-500/30 transition-all">
+            <!-- Loading placeholder -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-slate-600 font-mono text-xs z-0 pointer-events-none">
+              <i class="fa-solid fa-spinner fa-spin text-lg mb-1 text-slate-700"></i>
+              <span>Loading canvas...</span>
+            </div>
+
+            <!-- Scaled Iframe -->
+            <div class="preview-viewport">
+              <iframe 
+                src="${encodeURI(targetUrl)}" 
+                loading="lazy" 
+                title="Abztract family preview - ${escapeHtml(item.name)} (${escapeHtml(item.id)})"
+                class="scaled-iframe"
+                style="transform: translate(-50%, -50%) scale(${scale});"
+                sandbox="allow-scripts allow-same-origin"
+              ></iframe>
+            </div>
+
+            <!-- Full-card Click Action Overlay -->
+            <a 
+              href="${encodeURI(targetUrl)}" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="absolute inset-0 z-20 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent transition-opacity cursor-pointer"
+              title="Click to open ${escapeHtml(item.name)} in abztract.arhamkhnz.com"
+            >
+              <p class="text-[11px] text-slate-300 line-clamp-1 mb-2 font-sans">${escapeHtml(item.description || '')}</p>
+              <span class="text-xs self-start bg-purple-600/95 text-white font-medium px-3 py-1 rounded-full shadow-lg backdrop-blur-sm border border-purple-400/40 flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                <i class="fa-solid fa-up-right-from-square text-[10px]"></i> Open in Editor
+              </span>
+            </a>
+          </div>
+        `;
+
+        cardsGrid.appendChild(card);
+      });
+
+      // Bind copy buttons inside cards
+      document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const textToCopy = btn.getAttribute('data-url');
+          copyToClipboard(textToCopy);
+          showToast(`Copied ${textToCopy.substring(0, 48)}...`);
+        });
+      });
+    }
+
+    // Utility: Copy to clipboard
+    function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+      } catch (err) {
+        console.error('Fallback copy failed', err);
+      }
+      document.body.removeChild(textArea);
+    }
+
+    function showToast(message) {
+      toastMessage.textContent = message;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.add('translate-y-24', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 2600);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setupEventListeners() {
+      // Form submission
+      urlForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        renderGallery();
+      });
+
+      // Filter input typing
+      filterInput.addEventListener('input', (e) => {
+        currentFilter = e.target.value.trim();
+        renderGallery();
+      });
+
+      // Category tab clicking
+      categoryFilters.querySelectorAll('.cat-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+          categoryFilters.querySelectorAll('.cat-pill').forEach(b => {
+            b.classList.remove('bg-purple-600', 'text-white');
+            b.classList.add('bg-slate-800', 'text-slate-400');
+          });
+          btn.classList.remove('bg-slate-800', 'text-slate-400');
+          btn.classList.add('bg-purple-600', 'text-white');
+          currentCategory = btn.getAttribute('data-cat');
+          renderGallery();
+        });
+      });
+
+      // Paste button
+      pasteBtn.addEventListener('click', async () => {
+        try {
+          if (navigator.clipboard && navigator.clipboard.readText) {
+            const clipText = await navigator.clipboard.readText();
+            if (clipText) {
+              urlInput.value = clipText.trim();
+              renderGallery();
+              showToast("Pasted & generated!");
+            }
+          } else {
+            urlInput.focus();
+            urlInput.select();
+            showToast("Press Ctrl+V / Cmd+V to paste");
+          }
+        } catch (e) {
+          urlInput.focus();
+          urlInput.select();
+          showToast("Paste permission denied: use Ctrl+V / Cmd+V");
+        }
+      });
+
+      // Grid size change
+      gridSizeSelect.addEventListener('change', () => {
+        updateGridClasses(gridSizeSelect.value);
+        const scale = getScaleFactor(gridSizeSelect.value);
+        document.querySelectorAll('.scaled-iframe').forEach(iframe => {
+          iframe.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        });
+      });
+
+      // Reset button
+      resetPresetBtn.addEventListener('click', () => {
+        urlInput.value = DEFAULT_URL;
+        filterInput.value = '';
+        currentFilter = '';
+        currentCategory = 'all';
+        categoryFilters.querySelectorAll('.cat-pill').forEach(b => {
+          if (b.getAttribute('data-cat') === 'all') {
+            b.classList.remove('bg-slate-800', 'text-slate-400');
+            b.classList.add('bg-purple-600', 'text-white');
+          } else {
+            b.classList.remove('bg-purple-600', 'text-white');
+            b.classList.add('bg-slate-800', 'text-slate-400');
+          }
+        });
+        renderGallery();
+        showToast("Reset to default preset!");
+      });
+
+      // Open current URL button
+      openAllSampleBtn.addEventListener('click', () => {
+        const url = urlInput.value.trim() || DEFAULT_URL;
+        window.open(url, '_blank', 'noopener,noreferrer');
+      });
+
+      // Reload all iframes
+      reloadAllBtn.addEventListener('click', () => {
+        document.querySelectorAll('iframe').forEach(iframe => {
+          const originalSrc = iframe.src;
+          iframe.src = '';
+          setTimeout(() => { iframe.src = originalSrc; }, 50);
+        });
+        showToast("Reloading gallery frames...");
+      });
+
+      // Initial grid class assignment
+      updateGridClasses(gridSizeSelect.value);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
